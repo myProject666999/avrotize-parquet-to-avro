@@ -17,4 +17,9 @@ bin/
 obj/
 .vs/
 *.sln
-.tools/
+.tools/.env
+.env.*
+*.pem
+*.key
+secrets/
+*.token
