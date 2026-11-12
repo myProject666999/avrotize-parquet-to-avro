@@ -2572,6 +2572,69 @@
     ]
   },
   {
+    "command": "pq2ocf",
+    "description": "Convert Parquet data file to Avro Object Container File (OCF)",
+    "group": "3_Datalake",
+    "function": {
+      "name": "avrotize.parquetdatafiletoavro.convert_parquet_data_to_avro",
+      "args": {
+        "parquet_file_path": "input_file_path",
+        "avro_ocf_path": "output_file_path",
+        "namespace": "args.namespace",
+        "batch_size": "args.batch_size",
+        "codec": "args.codec"
+      }
+    },
+    "extensions": [
+      ".parquet"
+    ],
+    "args": [
+      {
+        "name": "input",
+        "type": "str",
+        "nargs": "?",
+        "help": "Path to the Parquet data file",
+        "required": true
+      },
+      {
+        "name": "--out",
+        "type": "str",
+        "help": "Path to the Avro OCF (.avro) data file",
+        "required": true
+      },
+      {
+        "name": "--namespace",
+        "type": "str",
+        "help": "Namespace for the generated Avro records",
+        "required": false
+      },
+      {
+        "name": "--batch-size",
+        "type": "int",
+        "help": "Maximum number of rows converted per streamed batch",
+        "default": 1024,
+        "required": false
+      },
+      {
+        "name": "--codec",
+        "type": "str",
+        "help": "Compression codec for the Avro OCF file",
+        "choices": [
+          "null",
+          "deflate",
+          "snappy",
+          "zstandard",
+          "bzip2",
+          "xz"
+        ],
+        "default": "null",
+        "required": false
+      }
+    ],
+    "suggested_output_file_path": "{input_file_name}.avro",
+    "skip_input_file_handling": true
+  },
+  {
     "command": "asn2a",
     "description": "Convert ASN.1 schema to Avrotize schema",
     "group": "1_Schemas",

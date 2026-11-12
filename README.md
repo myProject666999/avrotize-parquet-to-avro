@@ -74,6 +74,7 @@ Converting to Avrotize Schema:
 - [`avrotize k2a`](#convert-kusto-table-definition-to-avrotize-schema) - Convert Kusto table definitions to Avrotize Schema.
 - [`avrotize surreal2a`](#convert-surrealql-schema-to-avrotize-schema) - Convert SurrealQL schema definitions to Avrotize Schema.
 - [`avrotize pq2a`](#convert-parquet-schema-to-avrotize-schema) - Convert Parquet schema to Avrotize Schema.
+- [`avrotize pq2ocf`](#convert-parquet-data-file-to-avro-ocf) - Convert a Parquet data file to an Avro Object Container File (OCF).
 - [`avrotize csv2a`](#convert-csv-file-to-avrotize-schema) - Convert CSV file to Avrotize Schema.
 
 Converting from Avrotize Schema:
@@ -1477,6 +1478,29 @@ Conversion notes:
 
 - The tool reads the schema from the Parquet file and converts it to Avrotize Schema. The data in the Parquet file is not read or converted.
 - The fields of the Parquet schema are mapped to fields in the Avrotize Schema. Nested fields are mapped to nested records in the Avrotize Schema.
+
+### Convert Parquet data file to Avro OCF
+
+```bash
+avrotize pq2ocf <path_to_parquet_file> --out <path_to_avro_ocf_file> [--namespace <avro_schema_namespace>] [--batch-size <rows>] [--codec <codec>]
+```
+
+`pq2a` only converts the Parquet schema to an Avro schema (JSON). `pq2ocf` performs a full data conversion: it reads the rows of a Parquet data file and writes a standard Avro Object Container File (OCF, `.avro`) that any standards-compliant Avro reader can open. The Avro schema is generated from the Parquet schema automatically and embedded into the OCF header, so no separate Avro schema input is required.
+
+Parameters:
+
+- `<path_to_parquet_file>`: The path to the Parquet data file to convert (required).
+- `--out`: The path of the Avro OCF file to write (required). The file is written atomically: a failed conversion never leaves a partial output file.
+- `--namespace`: (optional) The namespace to use for the generated Avro record and any nested named types.
+- `--batch-size`: (optional) Maximum number of rows converted per streamed batch (default 1024). Conversion is streamed row-group/batch by row-group/batch; the whole Parquet file is never loaded into memory. Files with multiple row groups and empty (zero-row) files are supported.
+- `--codec`: (optional) OCF compression codec: `null` (default), `deflate`, `snappy`, `zstandard`, `bzip2`, or `xz`.
+
+Type mapping:
+
+- Signed and unsigned integers map to Avro `int`/`long`, floats to `float`/`double`, booleans to `boolean`, strings to `string`, binary to `bytes`, and fixed-size binary to Avro `fixed` with the matching byte width. A `uint64` value above the signed `long` maximum (2^63-1) is rejected with an explicit error rather than overflowing.
+- Nested structs become Avro records, lists become arrays (including fixed-size and large lists), and maps become Avro maps. Parquet maps with non-string keys cannot be represented in Avro and are rejected. Nullable Parquet fields become Avro `["null", ...]` unions.
+- Decimals become Avro `decimal` logical types preserving precision and scale; `date32`/`date64` become `date`; `time32`/`time64` become `time-millis`/`time-micros`; timezone-naive timestamps become `local-timestamp-millis`/`local-timestamp-micros` and timezone-aware timestamps become `timestamp-millis`/`timestamp-micros` (normalized to UTC).
+- Types without a lossless Avro representation (nanosecond timestamps or times, durations, unions, half-floats, view types) cause an explicit error. No field is ever silently dropped, truncated, or coerced.
 
 ### Convert CSV file to Avrotize Schema
 
